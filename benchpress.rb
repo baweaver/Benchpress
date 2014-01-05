@@ -53,6 +53,9 @@ end
 # Example Code
 e1 = Entity.new(name: 'symbol', method: -> { :symbol })
 e2 = Entity.new(name: 'string', method: -> { 'string' })
+e3 = Entity.new(name: 'integer', method: -> { 0 })
+e4 = Entity.new(name: 'hash', method: -> { {} })
+e5 = Entity.new(name: 'array', method: -> { [] })
 
-b = Benchpress.new(entities: [e1, e2], min: 10_000, max: 100_000, step: 1_000)
+b = Benchpress.new(entities: [e1, e2, e3, e4, e5], min: 100_000, max: 1_000_000, step: 10_000)
 p b.render
