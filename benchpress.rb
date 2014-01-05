@@ -29,11 +29,14 @@ class Benchpress
   def render
     calculate_data_points
 
-    g = Gruff::Line.new
-    g.labels = { @min => @min, @max => @max }
-    @entities.each { |entity| g.data entity.name.to_sym, entity.data_points }
-
-    g.write "#{Time.now.strftime '%Y-%m-%d-%H:%M:%S'}.png"
+    Gruff::Line.new.tap do |g|
+      g.labels = step_points.each_with_index.reduce({}) { |hash, (val, index)| 
+        index.odd? ? hash : hash.merge!({ index => val.to_s }) 
+      }
+      g.theme = Gruff::Themes::KEYNOTE
+      @entities.each { |entity| g.data entity.name.to_sym, entity.data_points }
+      g.write "#{Time.now.strftime '%Y-%m-%d-%H:%M:%S'}.png"
+    end
   end
 end
 
