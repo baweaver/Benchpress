@@ -9,7 +9,13 @@ module Benchpress
       @min  = opts[:min]  || 0
       @max  = opts[:max]  || 1000
       @entities = opts[:entities]
-      @name = "#{opts[:name]}.png" || "#{Time.now.strftime '%Y-%m-%d-%H:%M:%S'}.png"
+      @name = opts[:name] || "#{Time.now.strftime '%Y-%m-%d-%H:%M:%S'}"
+      @format = opts[:format] || 'png'
+      @theme = opts[:theme] || Gruff::Themes::THIRTYSEVEN_SIGNALS
+    end
+
+    def image_name
+      @name + '.' + @format
     end
 
     def step_points
@@ -31,11 +37,11 @@ module Benchpress
         g.labels = step_points.each_with_index.reduce({}) { |hash, (val, index)|
           index.odd? ? hash : hash.merge!({ index => val.to_s })
         }
-        g.theme = Gruff::Themes::THIRTYSEVEN_SIGNALS
+        g.theme = @theme
         @entities.each { |entity| g.data entity.name.to_sym, entity.data_points }
         g.x_axis_label = 'Times (n)'
         g.y_axis_label = 'Length (seconds)'
-      }.write @name
+      }.write image_name
     end
   end
 end
