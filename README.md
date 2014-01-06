@@ -32,7 +32,9 @@ and then render it:
 c.render
 ```
 
+![](http://i39.tinypic.com/2i11mc0.png)
+
 Voila! Instant chart with realtime benchmarks to demonstrate complexities of methods everywhere! Supports an arbitrary number of entities.
 
 Known issues:
-* X Axis labels do admittedly get nasty when there are too many of them. Planning to make it render a label at every 25% of the chart, or allow a user-specified.
+* X Axis labels do admittedly get nasty when there are too many of them. It does seem to misbehave a tinge. Fixes on the way for 0.0.2.
