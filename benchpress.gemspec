@@ -9,9 +9,9 @@ Gem::Specification.new do |spec|
   spec.authors       = ["Brandon Weaver"]
   spec.email         = ["keystonelemur@gmail.com"]
   spec.description   = %q{Pit Ruby methods against eachother in benchmark, and chart for great glory}
-  spec.summary       = %q{Ruby Benchmark + Gruff to auto-gen charts}
+  spec.summary       = %q{Ruby Benchmark + Gruff to auto-gen charts for method profiline}
   spec.homepage      = "https://github.com/baweaver/Benchpress"
-  spec.license       = "BSD"
+  spec.license       = "MIT"
 
   spec.files         = `git ls-files`.split($/)
   spec.executables   = spec.files.grep(%r{^bin/}) { |f| File.basename(f) }
@@ -20,5 +20,5 @@ Gem::Specification.new do |spec|
 
   spec.add_development_dependency "bundler", "~> 1.3"
   spec.add_development_dependency "rake"
-  spec.add_development_dependency "gruff"
+  spec.add_runtime_dependency "gruff"
 end

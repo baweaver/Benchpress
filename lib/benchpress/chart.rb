@@ -1,47 +1,90 @@
+require 'pry'
+
 module Benchpress
   class Chart
-    # step - increment
-    # min - minimum # of profiles to run
-    # max - maximum # of profiles to run
+
+    # format   - format of the file
+    # max      - maximum # of profiles to run
+    # min      - minimum # of profiles to run
+    # name     - name of the file
+    # step     - increment rate
+    # theme    - theme of the chart
     # entities - data methods to run against
     def initialize(opts = {})
-      @step = opts[:step] || 1
-      @min  = opts[:min]  || 0
-      @max  = opts[:max]  || 1000
-      @entities = opts[:entities]
-      @name = opts[:name] || "#{Time.now.strftime '%Y-%m-%d-%H:%M:%S'}"
-      @format = opts[:format] || 'png'
-      @theme = opts[:theme] || Gruff::Themes::THIRTYSEVEN_SIGNALS
+      @format   = opts[:format] || 'png'
+      @max      = opts[:max]    || 1000
+      @min      = opts[:min]    || 0
+      @name     = opts[:name]   || "#{Time.now.strftime '%Y-%m-%d-%H:%M:%S'}"
+      @step     = opts[:step]   || 1
+      @theme    = opts[:theme]  || Gruff::Themes::THIRTYSEVEN_SIGNALS
+      @entities = parse_entities opts[:entities]
     end
 
+    # Lets you parse in entities by passing a hash in.
+    #
+    #   Benchpress::Chart.new(
+    #     entities: {
+    #       string: -> { 'string' }
+    #       symbol: -> { :symbol  }
+    #     }
+    #   )
+    def parse_entities(entities)
+      raise 'Must have entities' unless entities
+      @entities = entities.each_pair.reduce([]) { |ary, (name, method)| ary << Entity.new(name => method) }
+    end
+
+    # file_name.ext
     def image_name
       @name + '.' + @format
     end
 
+    # Calculates Step Points
+    #
+    # (min / step) will render 0 unless min is greater than the step rate, giving the floor of the range
+    # (max / step) will render the maximum amount of times step will fit in the max wholly
+    #
+    # Caveat - If the max % step != 0, it will not render to the max. This is intended behavior.
     def step_points
-      @step_points ||= (@min..@max).select { |i| i % @step == 0 }
+      raise 'Cannot have larger step than max' if @step > @max
+      @step_points ||= ((@min / @step)..(@max / @step)).reduce([]) { |steps, i| steps << @step * i }
     end
 
-    def calculate_data_points
-      @entities.each do |entity|
-        step_points.each do |n|
-          entity.data_points << Benchmark.measure { n.times { entity.method.call } }.real
+    # Only grab labels for every other run, so as to space them out a bit more.
+    def even_labels
+      step_points.each_with_index.reduce({}) { |hash, (val, i)| i.odd? ? hash : hash.merge!({ i => val.to_s }) }
+    end
+
+    # Get labels for every point
+    def all_labels
+      step_points.each_with_index.reduce({}) { |hash, (val, index)| hash.merge!({ index => val.to_s }) }
+    end
+
+    # Render the entities data for the chart
+    def calculate_method_data_points
+      @entities.each { |entity| entity.render_data(step_points) }
+    end
+
+    # Render dispatcher. Note to refactor a tinge later.
+    def render(type = :line)
+      calculate_method_data_points
+
+      create_chart_data_for(
+        case type
+        when :line then Gruff::Line.new
+        when :bar  then Gruff::Bar.new
         end
-      end
+      ).write image_name
     end
 
-    def render
-      calculate_data_points
-
-      Gruff::Line.new.tap { |g|
-        g.labels = step_points.each_with_index.reduce({}) { |hash, (val, index)|
-          index.odd? ? hash : hash.merge!({ index => val.to_s })
-        }
+    def create_chart_data_for(chart)
+      chart.tap { |g|
+        g.labels = all_labels
         g.theme = @theme
-        @entities.each { |entity| g.data entity.name.to_sym, entity.data_points }
-        g.x_axis_label = 'Times (n)'
+        g.x_axis_label = 'Times Run (n)'
         g.y_axis_label = 'Length (seconds)'
-      }.write image_name
+
+        @entities.each { |entity| g.data *entity.data }
+      }
     end
   end
 end
