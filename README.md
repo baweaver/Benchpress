@@ -1,6 +1,8 @@
 Benchpress
 ==========
 
+[![Code Climate](https://codeclimate.com/github/baweaver/Benchpress.png)](https://codeclimate.com/github/baweaver/Benchpress)
+
 Pit a few ruby methods against eachother, and chart it for great glory.
 
 Props to the folks at Gruff (https://github.com/topfunky/gruff) for making this simpler to do, and to the Ruby team behind Benchmark.
