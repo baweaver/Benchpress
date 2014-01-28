@@ -19,7 +19,8 @@ c = Benchpress::Chart.new(
   },
   min: 50_000,               # Minimum times to run. Default: 0
   max: 100_000,              # Maximum times to run. Default: 1_000
-  step: 10_000,              # Step rate for next benchmark. Default: 1
+  step: 10_000,              # Step rate for next benchmark. Default: 250
+  cycles: 3,                 # How many times to repeat, so as to get an average. Default: 1
   name: 'string_vs_symbol',  # File name. Default: 'Time.now.strftime '%Y-%m-%d-%H:%M:%S''
   format: 'png'              # File format. Default: png
 )

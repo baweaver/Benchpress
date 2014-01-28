@@ -1,5 +1,3 @@
-require 'pry'
-
 module Benchpress
   class Chart
 
@@ -11,26 +9,24 @@ module Benchpress
     # theme    - theme of the chart
     # entities - data methods to run against
     def initialize(opts = {})
+      @cycles   = opts[:cycles] || 1
       @format   = opts[:format] || 'png'
       @max      = opts[:max]    || 1000
       @min      = opts[:min]    || 0
       @name     = opts[:name]   || "#{Time.now.strftime '%Y-%m-%d-%H:%M:%S'}"
-      @step     = opts[:step]   || 1
+      @step     = opts[:step]   || 250
       @theme    = opts[:theme]  || Gruff::Themes::THIRTYSEVEN_SIGNALS
       @entities = parse_entities opts[:entities]
     end
 
-    # Lets you parse in entities by passing a hash in.
-    #
-    #   Benchpress::Chart.new(
-    #     entities: {
-    #       string: -> { 'string' }
-    #       symbol: -> { :symbol  }
-    #     }
-    #   )
-    def parse_entities(entities)
-      raise 'Must have entities' unless entities
-      @entities = entities.each_pair.reduce([]) { |ary, (name, method)| ary << Entity.new(name => method) }
+    # Render dispatcher. Note to refactor a tinge later.
+    def render(type = :line)
+      create_chart_data_for(
+        case type
+        when :line then Gruff::Line.new
+        when :bar  then Gruff::Bar.new
+        end
+      ).write image_name
     end
 
     # file_name.ext
@@ -46,34 +42,31 @@ module Benchpress
     # Caveat - If the max % step != 0, it will not render to the max. This is intended behavior.
     def step_points
       raise 'Cannot have larger step than max' if @step > @max
+
       @step_points ||= ((@min / @step)..(@max / @step)).reduce([]) { |steps, i| steps << @step * i }
     end
 
-    # Only grab labels for every other run, so as to space them out a bit more.
-    def even_labels
-      step_points.each_with_index.reduce({}) { |hash, (val, i)| i.odd? ? hash : hash.merge!({ i => val.to_s }) }
-    end
+    private
 
     # Get labels for every point
     def all_labels
       step_points.each_with_index.reduce({}) { |hash, (val, index)| hash.merge!({ index => val.to_s }) }
     end
 
-    # Render the entities data for the chart
-    def calculate_method_data_points
-      @entities.each { |entity| entity.render_data(step_points) }
-    end
+    # Lets you parse in entities by passing a hash in.
+    #
+    #   Benchpress::Chart.new(
+    #     entities: {
+    #       string: -> { 'string' }
+    #       symbol: -> { :symbol  }
+    #     }
+    #   )
+    def parse_entities(entities)
+      raise 'Must have entities' unless entities
 
-    # Render dispatcher. Note to refactor a tinge later.
-    def render(type = :line)
-      calculate_method_data_points
-
-      create_chart_data_for(
-        case type
-        when :line then Gruff::Line.new
-        when :bar  then Gruff::Bar.new
-        end
-      ).write image_name
+      @entities = entities.reduce([]) { |ary, (name, method)| 
+        ary << Entity.new(step_points, @cycles, name => method) 
+      }
     end
 
     def create_chart_data_for(chart)

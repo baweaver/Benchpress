@@ -15,3 +15,7 @@ Initial release
 * Increase in rendering options
   * Can now render bar charts.
 * More efficient stepping algorithm, decreases runtime.
+
+# v1.1.0
+
+* Added Cycling, for more steady data

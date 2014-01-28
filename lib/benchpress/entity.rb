@@ -9,19 +9,33 @@ module Benchpress
     #   Benchpress::Entity.new(string: -> { 'string' })
     #
     # Warning: Direct instantiation has been deprecated, read the
-    def initialize(opts = {})
+    def initialize(steps, cycles, opts = {})
       raise 'Invalid formatting! Use "name: -> { method }"' unless opts.keys.length == 1
+      @cycles        = cycles
+      @steps         = steps
       @name, @method = *opts.flatten
-      @data_points = []
-    end
-
-    def render_data(step_points)
-      @data_points.clear
-      step_points.each { |n| @data_points << Benchmark.measure { n.times { @method.call } }.real }
     end
 
     def data
-      [@name.to_s, @data_points]
+      [@name.to_s, flatten_data(cycle_data)]
     end
+
+    private
+
+    def cycle_data
+      @cycles.times.reduce([]) { |table, _| table << measure_realtime }
+    end
+
+    def measure_realtime
+      @steps.reduce([]) { |data, n| data << Benchmark.measure { n.times { @method.call } }.real }
+    end
+
+    def flatten_data(table)
+      if table.length == 1
+        table.flatten
+      else
+        table.transpose.reduce([]) { |ary, data| ary << (data.reduce(:+) / data.length) }
+      end
+    end 
   end
 end
